@@ -140,16 +140,35 @@
       margin-bottom: 10px;
       border-radius: 8px;
       transition: 0.2s;
+      position: relative;
     }
 
-    li.done {
-      text-decoration: line-through;
-      opacity: 0.6;
-      background-color: #d4edda;
+    .bullet-point {
+      cursor: grab;
+      font-size: 1.2rem;
+      margin-right: 10px;
+      user-select: none;
+      position: relative;
+      color: var(--accent-color);
     }
 
-    body.dark li.done {
-      background-color: var(--secondary-color);
+    .bullet-point:hover {
+      cursor: grabbing;
+    }
+
+    .bullet-point:hover::after {
+      content: "drag task up or down";
+      position: absolute;
+      left: 25px;
+      top: -5px;
+      background-color: var(--primary-color);
+      color: var(--background-color);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .task-text {
@@ -160,6 +179,25 @@
     .actions {
       display: flex;
       gap: 8px;
+    }
+
+    .dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
+
+    .drag-over {
+      border-top: 2px solid var(--accent-color);
+    }
+
+    li.done {
+      text-decoration: line-through;
+      opacity: 0.6;
+      background-color: #d4edda;
+    }
+
+    body.dark li.done {
+      background-color: var(--secondary-color);
     }
 
     .kill-all-btn {
@@ -282,6 +320,39 @@
         const li = document.createElement('li');
         li.className = task.done ? 'done' : '';
 
+        const bulletPoint = document.createElement('span');
+        bulletPoint.className = 'bullet-point';
+        bulletPoint.textContent = '•'; // Bullet point character
+        bulletPoint.draggable = true; // Make it draggable
+        bulletPoint.ondragstart = (event) => {
+          event.dataTransfer.setData('text/plain', index);
+          li.classList.add('dragging');
+        };
+        bulletPoint.ondragend = () => {
+          li.classList.remove('dragging');
+        };
+        li.ondragover = (event) => {
+          event.preventDefault();
+          li.classList.add('drag-over');
+        };
+        li.ondragleave = () => {
+          li.classList.remove('drag-over');
+        };
+        li.ondrop = (event) => {
+          event.preventDefault();
+          const draggedIndex = parseInt(event.dataTransfer.getData('text/plain'));
+          const newIndex = index;
+          
+          if (draggedIndex !== newIndex) {
+            const temp = tasks[draggedIndex];
+            tasks.splice(draggedIndex, 1);
+            tasks.splice(newIndex, 0, temp);
+            saveTasks();
+            renderTasks();
+          }
+          li.classList.remove('drag-over');
+        };
+
         const span = document.createElement('span');
         span.className = 'task-text';
         span.innerText = task.text;
@@ -300,6 +371,7 @@
 
         actions.appendChild(editBtn);
         actions.appendChild(delBtn);
+        li.appendChild(bulletPoint);
         li.appendChild(span);
         li.appendChild(actions);
         taskList.appendChild(li);
