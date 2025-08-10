@@ -148,12 +148,24 @@
       font-size: 1.2rem;
       margin-right: 10px;
       user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
       position: relative;
       color: var(--accent-color);
+      touch-action: none; /* Prevents default touch behaviors */
     }
 
     .bullet-point:hover {
       cursor: grabbing;
+    }
+    
+    /* Prevent text selection during touch drag */
+    li.dragging {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
 
     .bullet-point:hover::after {
@@ -275,6 +287,9 @@
 
   <script>
     let tasks = [];
+    let touchStartY = 0;
+    let touchStartIndex = -1;
+    let isDragging = false;
 
     const taskList = document.getElementById('taskList');
     const taskInput = document.getElementById('taskInput');
@@ -323,7 +338,9 @@
         const bulletPoint = document.createElement('span');
         bulletPoint.className = 'bullet-point';
         bulletPoint.textContent = '•'; // Bullet point character
-        bulletPoint.draggable = true; // Make it draggable
+        bulletPoint.draggable = true; // Make it draggable for desktop
+        
+        // Desktop drag and drop
         bulletPoint.ondragstart = (event) => {
           event.dataTransfer.setData('text/plain', index);
           li.classList.add('dragging');
@@ -352,7 +369,86 @@
           }
           li.classList.remove('drag-over');
         };
-
+        
+        // Touch events for mobile devices
+        bulletPoint.addEventListener('touchstart', function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          touchStartY = event.touches[0].clientY;
+          touchStartIndex = index;
+          isDragging = true;
+          li.classList.add('dragging');
+          console.log('Touch start:', index, touchStartY);
+        }, { passive: false });
+        
+        bulletPoint.addEventListener('touchmove', function(event) {
+          if (!isDragging) return;
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const touchY = event.touches[0].clientY;
+          
+          // Find the target element based on touch position
+          const touchElement = document.elementFromPoint(event.touches[0].clientX, touchY);
+          const targetLi = touchElement ? touchElement.closest('li') : null;
+          
+          // Remove drag-over from all elements
+          document.querySelectorAll('li').forEach(item => item.classList.remove('drag-over'));
+          
+          if (targetLi && targetLi !== li) {
+            targetLi.classList.add('drag-over');
+          }
+        }, { passive: false });
+        
+        bulletPoint.addEventListener('touchend', function(event) {
+          if (!isDragging) return;
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const touchY = event.changedTouches[0].clientY;
+          const touchElement = document.elementFromPoint(event.changedTouches[0].clientX, touchY);
+          const targetLi = touchElement ? touchElement.closest('li') : null;
+          
+          console.log('Touch end:', touchStartIndex, targetLi ? Array.from(taskList.children).indexOf(targetLi) : 'no target');
+          
+          // Remove all drag classes
+          document.querySelectorAll('li').forEach(item => {
+            item.classList.remove('dragging', 'drag-over');
+          });
+          
+          if (targetLi && targetLi !== li) {
+            // Find the target index
+            const targetIndex = Array.from(taskList.children).indexOf(targetLi);
+            if (targetIndex !== -1 && touchStartIndex !== targetIndex) {
+              console.log('Moving task from', touchStartIndex, 'to', targetIndex);
+              const temp = tasks[touchStartIndex];
+              tasks.splice(touchStartIndex, 1);
+              tasks.splice(targetIndex, 0, temp);
+              saveTasks();
+              renderTasks();
+            }
+          }
+          
+          isDragging = false;
+          touchStartIndex = -1;
+                }, { passive: false });
+        
+        bulletPoint.addEventListener('touchcancel', function(event) {
+          if (!isDragging) return;
+          event.preventDefault();
+          event.stopPropagation();
+          
+          console.log('Touch cancelled');
+          
+          // Remove all drag classes
+          document.querySelectorAll('li').forEach(item => {
+            item.classList.remove('dragging', 'drag-over');
+          });
+          
+          isDragging = false;
+          touchStartIndex = -1;
+        }, { passive: false });
+        
         const span = document.createElement('span');
         span.className = 'task-text';
         span.innerText = task.text;
