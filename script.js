@@ -172,7 +172,7 @@ function renderTasks() {
     actions.className = 'actions';
 
     const prioBtn = document.createElement('button');
-    prioBtn.innerText = 'Prioritize';
+    prioBtn.innerText = task.priority ? 'Unprioritize' : 'Prioritize';
     prioBtn.onclick = () => togglePriority(index);
 
     const editBtn = document.createElement('button');
