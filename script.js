@@ -45,7 +45,9 @@ function renderTasks() {
   taskList.innerHTML = '';
   tasks.forEach((task, index) => {
     const li = document.createElement('li');
-    li.className = task.done ? 'done' : '';
+    li.className = '';
+    if (task.done) li.classList.add('done');
+    if (task.priority) li.classList.add('priority');
 
     const bulletPoint = document.createElement('span');
     bulletPoint.className = 'bullet-point';
@@ -169,6 +171,10 @@ function renderTasks() {
     const actions = document.createElement('div');
     actions.className = 'actions';
 
+    const prioBtn = document.createElement('button');
+    prioBtn.innerText = 'Prioritize';
+    prioBtn.onclick = () => togglePriority(index);
+
     const editBtn = document.createElement('button');
     editBtn.innerText = 'Edit';
     editBtn.onclick = () => editTask(index);
@@ -177,6 +183,7 @@ function renderTasks() {
     delBtn.innerText = 'Delete';
     delBtn.onclick = () => deleteTask(index);
 
+    actions.appendChild(prioBtn);
     actions.appendChild(editBtn);
     actions.appendChild(delBtn);
     li.appendChild(bulletPoint);
@@ -240,6 +247,13 @@ function batchAddTasks() {
 
 function toggleDone(index) {
   tasks[index].done = !tasks[index].done;
+  saveTasks();
+  renderTasks();
+}
+
+function togglePriority(index) {
+  const current = tasks[index].priority === true;
+  tasks[index].priority = !current;
   saveTasks();
   renderTasks();
 }

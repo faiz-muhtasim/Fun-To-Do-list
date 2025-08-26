@@ -205,6 +205,15 @@ body.dark li.done {
   background-color: var(--secondary-color);
 }
 
+/* Prioritized task styling */
+li.priority {
+  background-color: #ffe6e6; /* subtle red in light mode */
+}
+
+body.dark li.priority {
+  background-color: rgba(220, 53, 69, 0.15); /* subtle red tint in dark */
+}
+
 .kill-all-btn {
   position: fixed;
   bottom: 20px;
